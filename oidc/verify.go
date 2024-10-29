@@ -152,7 +152,7 @@ func parseJWT(p string) ([]byte, error) {
 	}
 	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
 	if err != nil {
-		return nil, fmt.Errorf("oidc: malformed jwt payload: %v", err)
+		return nil, fmt.Errorf("oidc: malformed jwt payload: %w", err)
 	}
 	return payload, nil
 }
@@ -170,7 +170,7 @@ func contains(sli []string, ele string) bool {
 func resolveDistributedClaim(ctx context.Context, verifier *IDTokenVerifier, src claimSource) ([]byte, error) {
 	req, err := http.NewRequest("GET", src.Endpoint, nil)
 	if err != nil {
-		return nil, fmt.Errorf("malformed request: %v", err)
+		return nil, fmt.Errorf("malformed request: %w", err)
 	}
 	if src.AccessToken != "" {
 		req.Header.Set("Authorization", "Bearer "+src.AccessToken)
@@ -178,13 +178,13 @@ func resolveDistributedClaim(ctx context.Context, verifier *IDTokenVerifier, src
 
 	resp, err := doRequest(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("oidc: Request to endpoint failed: %v", err)
+		return nil, fmt.Errorf("oidc: Request to endpoint failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("unable to read response body: %v", err)
+		return nil, fmt.Errorf("unable to read response body: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -193,7 +193,7 @@ func resolveDistributedClaim(ctx context.Context, verifier *IDTokenVerifier, src
 
 	token, err := verifier.Verify(ctx, string(body))
 	if err != nil {
-		return nil, fmt.Errorf("malformed response body: %v", err)
+		return nil, fmt.Errorf("malformed response body: %w", err)
 	}
 
 	return token.claims, nil
@@ -223,11 +223,11 @@ func (v *IDTokenVerifier) Verify(ctx context.Context, rawIDToken string) (*IDTok
 	// us do cheap checks before possibly re-syncing keys.
 	payload, err := parseJWT(rawIDToken)
 	if err != nil {
-		return nil, fmt.Errorf("oidc: malformed jwt: %v", err)
+		return nil, fmt.Errorf("oidc: malformed jwt: %w", err)
 	}
 	var token idToken
 	if err := json.Unmarshal(payload, &token); err != nil {
-		return nil, fmt.Errorf("oidc: failed to unmarshal claims: %v", err)
+		return nil, fmt.Errorf("oidc: failed to unmarshal claims: %w", err)
 	}
 
 	distributedClaims := make(map[string]claimSource)
@@ -321,7 +321,7 @@ func (v *IDTokenVerifier) Verify(ctx context.Context, rawIDToken string) (*IDTok
 	}
 	jws, err := jose.ParseSigned(rawIDToken, supportedSigAlgs)
 	if err != nil {
-		return nil, fmt.Errorf("oidc: malformed jwt: %v", err)
+		return nil, fmt.Errorf("oidc: malformed jwt: %w", err)
 	}
 
 	switch len(jws.Signatures) {
@@ -337,7 +337,7 @@ func (v *IDTokenVerifier) Verify(ctx context.Context, rawIDToken string) (*IDTok
 	ctx = context.WithValue(ctx, parsedJWTKey, jws)
 	gotPayload, err := v.keySet.VerifySignature(ctx, rawIDToken)
 	if err != nil {
-		return nil, fmt.Errorf("failed to verify signature: %v", err)
+		return nil, fmt.Errorf("failed to verify signature: %w", err)
 	}
 
 	// Ensure that the payload returned by the square actually matches the payload parsed earlier.

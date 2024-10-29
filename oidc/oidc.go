@@ -219,7 +219,7 @@ func NewProvider(ctx context.Context, issuer string) (*Provider, error) {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("unable to read response body: %v", err)
+		return nil, fmt.Errorf("unable to read response body: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -229,7 +229,7 @@ func NewProvider(ctx context.Context, issuer string) (*Provider, error) {
 	var p providerJSON
 	err = unmarshalResp(resp, body, &p)
 	if err != nil {
-		return nil, fmt.Errorf("oidc: failed to decode provider discovery object: %v", err)
+		return nil, fmt.Errorf("oidc: failed to decode provider discovery object: %w", err)
 	}
 
 	issuerURL, skipIssuerValidation := ctx.Value(issuerURLKey).(string)
@@ -325,12 +325,12 @@ func (p *Provider) UserInfo(ctx context.Context, tokenSource oauth2.TokenSource)
 
 	req, err := http.NewRequest("GET", p.userInfoURL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("oidc: create GET request: %v", err)
+		return nil, fmt.Errorf("oidc: create GET request: %w", err)
 	}
 
 	token, err := tokenSource.Token()
 	if err != nil {
-		return nil, fmt.Errorf("oidc: get access token: %v", err)
+		return nil, fmt.Errorf("oidc: get access token: %w", err)
 	}
 	token.SetAuthHeader(req)
 
@@ -352,14 +352,14 @@ func (p *Provider) UserInfo(ctx context.Context, tokenSource oauth2.TokenSource)
 	if parseErr == nil && mediaType == "application/jwt" {
 		payload, err := p.remoteKeySet().VerifySignature(ctx, string(body))
 		if err != nil {
-			return nil, fmt.Errorf("oidc: invalid userinfo jwt signature %v", err)
+			return nil, fmt.Errorf("oidc: invalid userinfo jwt signature %w", err)
 		}
 		body = payload
 	}
 
 	var userInfo userInfoRaw
 	if err := json.Unmarshal(body, &userInfo); err != nil {
-		return nil, fmt.Errorf("oidc: failed to decode userinfo: %v", err)
+		return nil, fmt.Errorf("oidc: failed to decode userinfo: %w", err)
 	}
 	return &UserInfo{
 		Subject:       userInfo.Subject,
@@ -548,7 +548,7 @@ func unmarshalResp(r *http.Response, body []byte, v interface{}) error {
 	ct := r.Header.Get("Content-Type")
 	mediaType, _, parseErr := mime.ParseMediaType(ct)
 	if parseErr == nil && mediaType == "application/json" {
-		return fmt.Errorf("got Content-Type = application/json, but could not unmarshal as JSON: %v", err)
+		return fmt.Errorf("got Content-Type = application/json, but could not unmarshal as JSON: %w", err)
 	}
-	return fmt.Errorf("expected Content-Type = application/json, got %q: %v", ct, err)
+	return fmt.Errorf("expected Content-Type = application/json, got %q: %w", ct, err)
 }

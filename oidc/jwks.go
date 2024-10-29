@@ -29,7 +29,7 @@ func (s *StaticKeySet) VerifySignature(ctx context.Context, jwt string) ([]byte,
 	// any algorithm.
 	jws, err := jose.ParseSigned(jwt, allAlgs)
 	if err != nil {
-		return nil, fmt.Errorf("parsing jwt: %v", err)
+		return nil, fmt.Errorf("parsing jwt: %w", err)
 	}
 	for _, pub := range s.PublicKeys {
 		switch pub.(type) {
@@ -149,7 +149,7 @@ func (r *RemoteKeySet) VerifySignature(ctx context.Context, jwt string) ([]byte,
 		var err error
 		jws, err = jose.ParseSigned(jwt, allAlgs)
 		if err != nil {
-			return nil, fmt.Errorf("oidc: malformed jwt: %v", err)
+			return nil, fmt.Errorf("oidc: malformed jwt: %w", err)
 		}
 	}
 	return r.verify(ctx, jws)
@@ -242,7 +242,7 @@ func (r *RemoteKeySet) keysFromRemote(ctx context.Context) ([]jose.JSONWebKey, e
 func (r *RemoteKeySet) updateKeys() ([]jose.JSONWebKey, error) {
 	req, err := http.NewRequest("GET", r.jwksURL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("oidc: can't create request: %v", err)
+		return nil, fmt.Errorf("oidc: can't create request: %w", err)
 	}
 
 	resp, err := doRequest(r.ctx, req)
@@ -253,7 +253,7 @@ func (r *RemoteKeySet) updateKeys() ([]jose.JSONWebKey, error) {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("unable to read response body: %v", err)
+		return nil, fmt.Errorf("unable to read response body: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -263,7 +263,7 @@ func (r *RemoteKeySet) updateKeys() ([]jose.JSONWebKey, error) {
 	var keySet jose.JSONWebKeySet
 	err = unmarshalResp(resp, body, &keySet)
 	if err != nil {
-		return nil, fmt.Errorf("oidc: failed to decode keys: %v %s", err, body)
+		return nil, fmt.Errorf("oidc: failed to decode keys: %w %s", err, body)
 	}
 	return keySet.Keys, nil
 }
